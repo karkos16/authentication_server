@@ -4,6 +4,9 @@ import com.czupito_server.data.user.MongoUserDataSource
 import com.czupito_server.data.user.User
 import io.ktor.server.application.*
 import com.czupito_server.plugins.*
+import com.czupito_server.security.hashing.SHA256HashingService
+import com.czupito_server.security.token.JwtTokenService
+import com.czupito_server.security.token.TokenConfig
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.litote.kmongo.coroutine.coroutine
@@ -23,17 +26,17 @@ fun Application.module() {
 
     val userDataSource = MongoUserDataSource(db)
 
-    GlobalScope.launch {
-        val user = User (
-            username = "test",
-            password = "test123",
-            salt = "123"
-        )
-        userDataSource.insertUser(user)
-    }
+    val tokenService = JwtTokenService()
+    val tokenConfig = TokenConfig(
+        issuer = environment.config.property("jwt.issuer").getString(),
+        audience = environment.config.property("jwt.audience").getString(),
+        expiresIn = 1000L * 60L * 60L * 24L * 365L,
+        secret = System.getenv("JWT_SECRET")
+    )
+    val hashingService =  SHA256HashingService()
 
-    configureSecurity()
+    configureSecurity(tokenConfig)
     configureMonitoring()
     configureSerialization()
-    configureRouting()
+    configureRouting(userDataSource, hashingService, tokenService, tokenConfig)
 }
