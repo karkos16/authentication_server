@@ -1,3 +1,3 @@
-# czupito_server
+# authentication_server
 
-To jest serwer do aplikacji kurwa
+Simple authentication server in Ktor
